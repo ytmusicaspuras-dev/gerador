@@ -9,50 +9,39 @@ export const generateStamp = async (
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
   if (!apiKey) {
-    throw new Error("Chave de API não configurada. Verifique VITE_GEMINI_API_KEY.");
+    throw new Error("Chave de API não configurada (VITE_GEMINI_API_KEY).");
   }
 
   const ai = new GoogleGenerativeAI(apiKey);
 
-  const cleanText = userText.trim();
+  const model = ai.getGenerativeModel({
+    model: "gemini-2.5-flash-image"
+  });
 
-  const finalPrompt = `Crie uma arte em PNG, fundo transparente, alta resolução, tema: ${cleanText}. 
-Estilo aplicado: ${preset.promptSuffix}
-Inclua riqueza de detalhes, visual limpo e ideal para estampar.`;
-
+  const prompt = `Crie uma arte em PNG, fundo transparente, 1:1, tema: ${userText}.
+Estilo: ${preset.promptSuffix}.
+Alta resolução, detalhado, limpo e ideal para estampas.`;
 
   try {
-    const model = ai.getGenerativeModel({
-      model: "gemini-2.5-flash-image"
-    });
-
-    const response = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: finalPrompt }]
-        }
-      ],
-      generationConfig: {
-        responseMimeType: "image/png",
-        aspectRatio: "1:1"
+    const response = await model.generateContent([
+      {
+        role: "user",
+        parts: [{ text: prompt }]
       }
-    });
+    ]);
 
-    const candidate = response.response.candidates?.[0];
+    const part = response.response.candidates?.[0]?.content?.parts?.find(
+      (p) => p.inlineData
+    );
 
-    if (candidate?.content?.parts) {
-      for (const part of candidate.content.parts) {
-        if (part.inlineData?.mimeType?.startsWith("image/")) {
-          return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-        }
-      }
+    if (!part) {
+      throw new Error("Nenhuma imagem retornada pelo modelo.");
     }
 
-    throw new Error("O modelo não retornou uma imagem válida.");
+    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
 
   } catch (error: any) {
-    console.error("Erro na geração:", error);
+    console.error("Erro ao gerar imagem:", error);
     throw new Error(error.message || "Erro desconhecido.");
   }
 };
