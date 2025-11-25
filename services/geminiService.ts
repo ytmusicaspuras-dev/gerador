@@ -5,7 +5,15 @@ export const generateStamp = async (
   userText: string, 
   preset: Preset
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // CORREÇÃO CRÍTICA PARA NETLIFY/VITE:
+  // O navegador não possui 'process.env'. Usamos 'import.meta.env.VITE_...'
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Chave de API não configurada. Verifique as configurações da Netlify (VITE_GEMINI_API_KEY).");
+  }
+
+  const ai = new GoogleGenAI({ apiKey: apiKey });
   
   const cleanText = userText.trim();
 
