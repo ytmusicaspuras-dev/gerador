@@ -59,13 +59,12 @@ export const Generator: React.FC<GeneratorProps> = ({ user, refreshUser, setView
         setSuccessMsg("Arte gerada com sucesso! Veja na sua Biblioteca.");
         setInputText('');
         // Optional: Auto redirect to library
-        setTimeout(() => setView('library'), 2000);
+        setTimeout(() => setView('library'), 1500);
       } else {
          setErrorMsg("Erro ao processar crédito.");
       }
     } catch (e: any) {
-      // Display specific error if available
-      setErrorMsg(e.message || "Não foi possível gerar a imagem. Tente novamente.");
+      setErrorMsg("Não foi possível gerar a imagem. Tente novamente. (Crédito não descontado)");
     } finally {
       setIsLoading(false);
     }
@@ -117,14 +116,12 @@ export const Generator: React.FC<GeneratorProps> = ({ user, refreshUser, setView
         </p>
         
         {errorMsg && (
-          <div className="mb-3 bg-red-100 text-red-700 p-3 rounded-lg text-center font-bold border border-red-200 shadow-sm animate-pulse">
-            <i className="fa-solid fa-triangle-exclamation mr-2"></i>
+          <div className="mb-3 bg-red-100 text-red-700 p-3 rounded-lg text-center font-bold">
             {errorMsg}
           </div>
         )}
          {successMsg && (
-          <div className="mb-3 bg-green-100 text-green-700 p-3 rounded-lg text-center font-bold border border-green-200 shadow-sm">
-            <i className="fa-solid fa-check-circle mr-2"></i>
+          <div className="mb-3 bg-green-100 text-green-700 p-3 rounded-lg text-center font-bold">
             {successMsg}
           </div>
         )}
@@ -135,7 +132,7 @@ export const Generator: React.FC<GeneratorProps> = ({ user, refreshUser, setView
           className={`w-full py-5 rounded-2xl text-2xl font-extrabold text-white shadow-lg transition-all ${
             isLoading || user.credits <= 0
               ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-brand-purple hover:bg-brand-dark active:scale-95'
+              : 'bg-brand-purple hover:bg-brand-dark active:scale-95 animate-pulse-slow'
           }`}
         >
           {isLoading ? (
