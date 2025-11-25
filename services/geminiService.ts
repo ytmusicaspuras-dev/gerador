@@ -1,22 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 import { Preset } from "../types";
 
-// Note: In a real production app, the key should be proxied. 
-// However, per instructions, we use process.env.API_KEY directly.
-
 export const generateStamp = async (
   userText: string, 
   preset: Preset
 ): Promise<string> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API Key não encontrada.");
-  }
-
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const cleanText = userText.trim();
 
-  // Constructing the prompt exactly as requested in the specification
   const finalPrompt = `Crie uma arte em PNG, fundo transparente, alta resolução, tema: ${cleanText}. 
 Estilo aplicado: ${preset.promptSuffix}
 Inclua riqueza de detalhes, visual limpo e ideal para estampar.`;
@@ -34,7 +26,6 @@ Inclua riqueza de detalhes, visual limpo e ideal para estampar.`;
       }
     });
 
-    // Parse response for image
     const candidate = response.candidates?.[0];
     
     if (candidate?.content?.parts) {
@@ -45,11 +36,9 @@ Inclua riqueza de detalhes, visual limpo e ideal para estampar.`;
       }
     }
     
-    // Check if model returned text (e.g. refusal or safety warning)
     const textPart = candidate?.content?.parts?.find(p => p.text);
     if (textPart?.text) {
         console.warn("Model returned text instead of image:", textPart.text);
-        // Throw a user-friendly error based on the text if possible, or a generic one
         throw new Error(`Não foi possível gerar a imagem. O modelo respondeu: "${textPart.text.substring(0, 100)}..." Tente descrever de forma diferente.`);
     }
 
