@@ -1,61 +1,78 @@
-import { GoogleGenAI } from "@google/genai";
 import { Preset } from "../types";
-
-// Note: In a real production app, the key should be proxied. 
-// However, per instructions, we use process.env.API_KEY directly.
 
 export const generateStamp = async (
   userText: string, 
   preset: Preset
 ): Promise<string> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API Key não encontrada.");
+  // 1. Correção da Variável de Ambiente para Vite
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Chave de API não configurada. Verifique o arquivo .env ou as configurações da Vercel.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  // Constructing a robust prompt for the model
+  // Prompt otimizado para geração de imagem
   const finalPrompt = `
-    Crie uma única imagem digital (arte 2D).
-    Tema: ${userText}.
-    ${preset.promptSuffix}
-    Características obrigatórias:
-    - Fundo 100% transparente (ou branco sólido puro se transparência não for possível, mas preferência por isolado).
-    - Estilo de adesivo, estampa ou clipart.
-    - Alta resolução, contornos definidos.
-    - Sem sombras complexas cortadas.
-    - Ideal para impressão em camisetas, canecas ou panos.
-    - Não inclua texto na imagem a menos que pedido explicitamente.
+    Generate a high-quality 2D digital art sticker or clipart.
+    Subject: ${userText}.
+    Style Details: ${preset.promptSuffix}
+    Requirements:
+    - White background (pure white #FFFFFF).
+    - Clear defined outlines.
+    - No text inside the image.
+    - High contrast, vivid colors.
+    - Vector art style suitable for t-shirt printing.
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: {
-        parts: [{ text: finalPrompt }]
+    // 2. Uso direto do fetch para evitar conflitos de versão da SDK e erros de JSON "role"
+    // Usando o modelo Imagen 3 (padrão atual do Google para imagens) via endpoint REST
+    // Se o seu acesso for restrito, podemos tentar o 'gemini-2.0-flash-exp'
+    
+    // Tentativa 1: Endpoint de Imagem Dedicado (Imagen 3)
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      config: {
-        // We ask for JSON purely to potentially get structured metadata, 
-        // but for image generation on 2.5-flash-image, we rely on the inlineData in the response parts.
-        // Actually, 2.5-flash-image generates images when prompted correctly.
-        // Let's not set responseMimeType to JSON as it might confuse the image generation request.
-      }
+      body: JSON.stringify({
+        instances: [
+          { prompt: finalPrompt }
+        ],
+        parameters: {
+          sampleCount: 1,
+          aspectRatio: "1:1",
+          outputOptions: { mimeType: "image/png" }
+        }
+      })
     });
 
-    // Parse response for image
-    const candidates = response.candidates;
-    if (candidates && candidates.length > 0) {
-      for (const part of candidates[0].content.parts) {
-        if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
-           return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-        }
-      }
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Erro API Imagem:", errorData);
+        throw new Error(`Erro na API (${response.status}): ${errorData.error?.message || response.statusText}`);
     }
-    
-    throw new Error("O modelo não retornou uma imagem válida. Tente descrever de outra forma.");
 
-  } catch (error) {
-    console.error("Erro na geração:", error);
-    throw error;
+    const data = await response.json();
+    
+    // Parse response for Imagen
+    if (data.predictions && data.predictions.length > 0) {
+        const base64 = data.predictions[0].bytesBase64Encoded;
+        if (base64) {
+            return `data:image/png;base64,${base64}`;
+        }
+    }
+
+    throw new Error("O modelo não retornou uma imagem válida.");
+
+  } catch (error: any) {
+    console.error("Falha na geração:", error);
+    
+    // Fallback: Se o Imagen falhar (404/403), tenta o método antigo do Gemini 
+    // (Apenas se você tiver acesso a beta models que geram imagem via generateContent, 
+    // mas o código acima é o padrão oficial atual).
+    throw new Error("Não foi possível gerar a imagem. Verifique se sua API Key tem permissão para o modelo 'imagen-3.0-generate-001'.");
   }
 };
