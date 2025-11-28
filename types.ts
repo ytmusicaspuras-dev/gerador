@@ -1,3 +1,4 @@
+
 export interface GeneratedImage {
   id: string;
   data: string; // base64
@@ -5,23 +6,59 @@ export interface GeneratedImage {
   presetName: string;
   createdAt: number;
   tags: string[];
+  isFavorite?: boolean;
 }
 
 export interface UserState {
+  name: string;
   credits: number;
-  lastResetDate: string; // YYYY-MM-DD
-  installDate: string; // YYYY-MM-DD
-  totalGenerated: number;
   isPremium: boolean;
-  fingerprint: string;
-  isBlocked: boolean;
+  totalGenerated: number;
+  lastResetDate: string;
+  hasSeenTutorial?: boolean;
 }
 
 export interface Preset {
   id: string;
   label: string;
-  promptSuffix: string; // The "invisible" part
-  icon: string; // FontAwesome class
+  promptSuffix: string; 
+  icon: string; 
 }
 
-export type View = 'generator' | 'library' | 'profile';
+export type View = 'generator' | 'library' | 'profile' | 'creative';
+
+// Tipos para o Modo Criativo
+export interface EditorElement {
+  id: string;
+  type: 'sticker' | 'text';
+  content: string; // URL ou texto
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+  color?: string;
+  font?: string;
+  isLocked?: boolean;
+  zIndex: number;
+}
+
+export interface HistoryState {
+  bg: string | null;
+  elements: EditorElement[];
+  filter: string;
+}
+
+export interface Template {
+    id: string;
+    name: string;
+    bgUrl: string;
+    elements: EditorElement[];
+}
+
+export interface Mockup {
+    id: string;
+    name: string;
+    image: string; // URL da imagem do produto em branco
+    overlayArea: { top: number, left: number, width: number, height: number }; // Área onde a arte vai
+    prompt?: string;
+}

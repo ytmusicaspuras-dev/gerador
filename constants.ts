@@ -1,10 +1,11 @@
-import { Preset } from './types';
+
+import { Preset, Mockup, Template } from './types';
 
 export const APP_NAME = "Estampa Mágica";
 export const BRAND_COLOR = "#6A0DAD";
 export const ICON_URL = "https://imgur.com/PVjo40J.png";
 
-export const DAILY_CREDITS = 20;
+export const DAILY_CREDITS = 10;
 export const FIRST_DAY_CREDITS = 3;
 export const PREMIUM_PRICE = "R$ 14,90";
 
@@ -21,6 +22,87 @@ export const PRESETS: Preset[] = [
   { id: 'evangelico', label: 'Evangélico', promptSuffix: 'Estilo aplicado: Evangélico, versículos, leão de judá, cruz vazia, moderno e inspirador.', icon: 'fa-book-bible' },
   { id: 'pano_prato', label: 'Pano de Prato', promptSuffix: 'Estilo aplicado: Pano de Prato, galinhas, frutas, cozinha, estilo rústico e acolhedor.', icon: 'fa-utensils' },
   { id: 'frases', label: 'Frases Curtas', promptSuffix: 'Estilo aplicado: Tipografia criativa, frases curtas, impacto visual, design minimalista.', icon: 'fa-comment' },
+];
+
+export const STICKER_CATEGORIES = {
+    'Básicos': ['❤️', '⭐', '🌸', '🎀', '✨', '🦋', '🎈', '🎵', '🔥', '💧'],
+    'Natureza': ['🌹', '🌻', '🌷', '🌵', '🌴', '🍂', '🍄', '🐞', '🐝', '🦋', '🌿', '🍃'],
+    'Brilhos': ['✨', '❇️', '💫', '🌟', '✴️', '💎', '🌙', '☀️', '🎇', '🎆'],
+    'Corações': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🤎', '🖤', '🤍', '💖', '💗', '💓', '💞', '💕', '💟', '❣️'],
+    'Laços & Festas': ['🎀', '🎁', '🎂', '🎊', '🎈', '🎗️', '🎪', '🧸', '🎟️', '🕯️'],
+    'Animais': ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🦄'],
+    'Comida': ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍓', '🍒', '🍑', '🍍', '🥝', '🥑', '🍔', '🍕', '🍩', '🍦'],
+    'Formas': ['🔴', '🟦', '🔶', '🔻', '⚪', '⚫', '◼️', '✅', '❌', '⭕', '🔺', '🔹'],
+    'Molduras': ['🖼️', '🔳', '🔲', '💠', '🛡️', '📜', '🏷️', '🔖']
+};
+
+// Mockups agora usam Prompts em vez de URLs fixas e incluem instruções de variação
+export const MOCKUPS: Mockup[] = [
+    { 
+        id: 'tshirt', 
+        name: 'Camiseta', 
+        image: '', 
+        overlayArea: { top: 0, left: 0, width: 0, height: 0 },
+        prompt: "Crie um mockup realista de camiseta branca com a arte aplicada. Varia o cenário entre: estúdio neutro, ambiente minimalista, superfície macia, arara de roupas, bancada. Iluminação suave."
+    },
+    { 
+        id: 'ecobag', 
+        name: 'Ecobag', 
+        image: '', 
+        overlayArea: { top: 0, left: 0, width: 0, height: 0 },
+        prompt: "Crie um mockup realista de uma ecobag de tecido cru, com a arte anexada aplicada na área frontal. Varia entre: foto ao ar livre, mesa rústica, estúdio iluminado, parede clara, bancada minimalista."
+    },
+    { 
+        id: 'mug', 
+        name: 'Caneca', 
+        image: '', 
+        overlayArea: { top: 0, left: 0, width: 0, height: 0 },
+        prompt: "Mockup de caneca de cerâmica branca com a arte aplicada. Varia entre: mesa de madeira, bancada branca, estúdio, cena com luz suave pela manhã, mão segurando a caneca."
+    },
+    { 
+        id: 'body', 
+        name: 'Body Bebê', 
+        image: '', 
+        overlayArea: { top: 0, left: 0, width: 0, height: 0 },
+        prompt: "Mockup fofo de um body de bebê branco (onesie). Varia o cenário entre: berço, fundo de pelúcia, superfície de madeira clara, decoração infantil, estúdio clean."
+    },
+    { 
+        id: 'pillow', 
+        name: 'Almofada', 
+        image: '', 
+        overlayArea: { top: 0, left: 0, width: 0, height: 0 },
+        prompt: "Mockup de uma almofada quadrada decorativa. Varia o cenário entre: sofá de sala, cama aconchegante, poltrona, fundo neutro, ambiente de leitura."
+    },
+    { 
+        id: 'frame', 
+        name: 'Quadro', 
+        image: '', 
+        overlayArea: { top: 0, left: 0, width: 0, height: 0 },
+        prompt: "Crie um mockup realista de um quadro decorativo com moldura. Varia o cenário entre: parede de sala, prateleira, mesa de escritório, parede de quarto infantil, composição com plantas."
+    },
+];
+
+export const TEMPLATES: Template[] = [
+    { 
+        id: 'temp1', 
+        name: 'Mêsversário', 
+        bgUrl: '', 
+        elements: [
+            { id: 't1_1', type: 'text', content: '1 Mês', x: 50, y: 40, scale: 1.5, rotation: 0, color: '#6A0DAD', font: 'hand', zIndex: 2 },
+            { id: 't1_2', type: 'sticker', content: '🎈', x: 20, y: 20, scale: 2, rotation: -10, zIndex: 1, color: '#FFFFFF' },
+            { id: 't1_3', type: 'sticker', content: '🧸', x: 80, y: 80, scale: 2, rotation: 10, zIndex: 1, color: '#FFFFFF' }
+        ] 
+    },
+    { 
+        id: 'temp2', 
+        name: 'Gratidão', 
+        bgUrl: '', 
+        elements: [
+            { id: 't2_1', type: 'text', content: 'Gratidão', x: 50, y: 50, scale: 2, rotation: 0, color: '#FFD700', font: 'hand', zIndex: 2 },
+            { id: 't2_2', type: 'sticker', content: '✨', x: 30, y: 30, scale: 1, rotation: 0, zIndex: 1, color: '#FFFFFF' },
+            { id: 't2_3', type: 'sticker', content: '✨', x: 70, y: 70, scale: 1.5, rotation: 0, zIndex: 1, color: '#FFFFFF' }
+        ] 
+    }
 ];
 
 export const WARNING_MSG_PAYMENT = "⚠️ Se o pagamento do plano não for identificado, seu app será bloqueado automaticamente.";

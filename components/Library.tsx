@@ -1,88 +1,110 @@
+
 import React, { useEffect, useState } from 'react';
-import { getLibrary, removeFromLibrary } from '../services/storageService';
+import { getLibrary, removeFromLibrary, toggleFavorite } from '../services/storageService';
 import { GeneratedImage } from '../types';
 
-export const Library: React.FC = () => {
+interface LibraryProps {
+    onEdit: (img: GeneratedImage) => void;
+}
+
+export const Library: React.FC<LibraryProps> = ({ onEdit }) => {
   const [images, setImages] = useState<GeneratedImage[]>([]);
+  const [filteredImages, setFilteredImages] = useState<GeneratedImage[]>([]);
   const [selectedImg, setSelectedImg] = useState<GeneratedImage | null>(null);
+  
+  // Filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterFav, setFilterFav] = useState(false);
 
   useEffect(() => {
     setImages(getLibrary());
   }, []);
 
+  useEffect(() => {
+    let result = [...images];
+    if (filterFav) result = result.filter(img => img.isFavorite);
+    if (searchTerm) result = result.filter(img => img.prompt.toLowerCase().includes(searchTerm.toLowerCase()));
+    result.sort((a, b) => b.createdAt - a.createdAt);
+    setFilteredImages(result);
+  }, [images, searchTerm, filterFav]);
+
   const handleDelete = (id: string) => {
-    if (confirm("Tem certeza que deseja apagar essa estampa?")) {
+    if (confirm("Apagar?")) {
       removeFromLibrary(id);
       setImages(getLibrary());
       setSelectedImg(null);
     }
   };
 
-  const handleDownload = (img: GeneratedImage) => {
-    const link = document.createElement('a');
-    link.href = img.data;
-    link.download = `estampa-magica-${img.createdAt}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleToggleFav = (e: React.MouseEvent, id: string) => {
+      e.stopPropagation();
+      toggleFavorite(id);
+      setImages(getLibrary());
+  };
+
+  const handleShare = async () => {
+      if(!selectedImg) return;
+      
+      const text = `Olha essa arte que criei no Estampa Mágica: ${selectedImg.prompt}`;
+
+      // Convert Base64 to Blob/File for sharing
+      try {
+          const base64Response = await fetch(selectedImg.data);
+          const blob = await base64Response.blob();
+          const file = new File([blob], "estampa_magica_arte.png", { type: 'image/png' });
+
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                  title: 'Minha Estampa Mágica',
+                  text: text,
+                  files: [file]
+              });
+          } else {
+              // Fallback for Desktop/Unsupported
+              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+              alert("A imagem foi baixada para você enviar manualmente, pois seu navegador não suporta compartilhamento direto.");
+              // Trigger download
+              const link = document.createElement('a');
+              link.href = selectedImg.data;
+              link.download = 'estampa.png';
+              link.click();
+          }
+      } catch (error) {
+          console.error("Erro ao compartilhar:", error);
+          alert("Não foi possível compartilhar a imagem diretamente.");
+      }
   };
 
   return (
     <div className="p-4 max-w-lg mx-auto pb-24">
-      <h2 className="text-2xl font-bold text-gray-700 mb-4">Minhas Estampas</h2>
+      <div className="mb-6 space-y-3">
+          <h2 className="text-2xl font-bold text-gray-700">Biblioteca</h2>
+          <div className="flex gap-2">
+            <input type="text" placeholder="Buscar..." className="flex-1 px-4 py-2 rounded-xl border" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <button onClick={() => setFilterFav(!filterFav)} className={`px-3 rounded-xl border ${filterFav ? 'bg-yellow-100 border-yellow-400' : 'bg-white'}`}><i className="fa-solid fa-star text-yellow-500"></i></button>
+          </div>
+      </div>
       
-      {images.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
-          <i className="fa-regular fa-image text-6xl text-gray-200 mb-4"></i>
-          <p className="text-gray-500 text-lg">Você ainda não criou nenhuma estampa.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4">
-          {images.map((img) => (
-            <div 
-              key={img.id} 
-              className="bg-white rounded-xl shadow-md overflow-hidden relative group aspect-square border border-gray-100"
-              onClick={() => setSelectedImg(img)}
-            >
-              <img src={img.data} alt={img.prompt} className="w-full h-full object-contain p-2 bg-[url('https://www.transparenttextures.com/patterns/checkerboard-white-gray.png')]" />
-              <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 truncate text-center">
-                {img.presetName}
-              </div>
+      <div className="grid grid-cols-2 gap-4">
+          {filteredImages.map((img) => (
+            <div key={img.id} className="bg-white rounded-xl shadow-md overflow-hidden aspect-square border relative" onClick={() => setSelectedImg(img)}>
+              <button onClick={(e) => handleToggleFav(e, img.id)} className="absolute top-2 right-2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-sm">
+                  <i className={`fa-star ${img.isFavorite ? 'fa-solid text-yellow-400' : 'fa-regular text-gray-400'}`}></i>
+              </button>
+              <img src={img.data} className="w-full h-full object-contain p-2 bg-[url('https://www.transparenttextures.com/patterns/checkerboard-white-gray.png')]" />
             </div>
           ))}
-        </div>
-      )}
+      </div>
 
-      {/* Detail Modal */}
       {selectedImg && (
-        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4" onClick={() => setSelectedImg(null)}>
+        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setSelectedImg(null)}>
           <div className="bg-white rounded-2xl p-4 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-gray-700">Detalhes da Estampa</h3>
-              <button onClick={() => setSelectedImg(null)} className="text-gray-400 hover:text-gray-600">
-                <i className="fa-solid fa-xmark text-2xl"></i>
-              </button>
-            </div>
-            
-            <div className="bg-[url('https://www.transparenttextures.com/patterns/checkerboard-white-gray.png')] rounded-xl overflow-hidden mb-4 border border-gray-200">
-              <img src={selectedImg.data} alt="Full view" className="w-full h-auto max-h-[300px] object-contain mx-auto" />
-            </div>
-
-            <p className="text-sm text-gray-600 mb-4 italic">"{selectedImg.prompt}"</p>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button 
-                onClick={() => handleDownload(selectedImg)}
-                className="bg-brand-purple text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-brand-dark"
-              >
-                <i className="fa-solid fa-download"></i> Baixar
-              </button>
-              <button 
-                onClick={() => handleDelete(selectedImg.id)}
-                className="bg-red-100 text-red-600 font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-red-200"
-              >
-                <i className="fa-solid fa-trash"></i> Apagar
-              </button>
+            <img src={selectedImg.data} className="w-full h-auto max-h-[300px] object-contain mx-auto border mb-4 bg-gray-100" />
+            <div className="grid grid-cols-2 gap-2">
+               <button onClick={() => { setSelectedImg(null); onEdit(selectedImg); }} className="col-span-2 bg-yellow-400 text-yellow-900 font-bold py-3 rounded-xl"><i className="fa-solid fa-wand-magic-sparkles"></i> Editar</button>
+               <button onClick={handleShare} className="bg-green-500 text-white font-bold py-3 rounded-xl"><i className="fa-brands fa-whatsapp"></i> Zap (Img+Txt)</button>
+               <button onClick={() => handleDelete(selectedImg.id)} className="bg-red-100 text-red-600 font-bold py-3 rounded-xl"><i className="fa-solid fa-trash"></i></button>
+               <a href={selectedImg.data} download="arte.png" className="bg-brand-purple text-white font-bold py-3 rounded-xl flex items-center justify-center col-span-2"><i className="fa-solid fa-download mr-2"></i> Baixar PNG</a>
             </div>
           </div>
         </div>
